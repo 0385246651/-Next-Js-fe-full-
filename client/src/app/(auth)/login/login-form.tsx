@@ -16,9 +16,12 @@ import { useToast } from "@/components/ui/use-toast"
 import authAPiRequest from "@/apiRequests/auth"
 import { useRouter } from "next/navigation"
 import { clientSessionToken } from "@/lib/http"
+import { handleErrorApi } from "@/lib/utils"
+import { useState } from "react"
 
 
 export default function LoginForm() {
+    const [loading, setLoading] = useState<boolean>(false)
     const { toast } = useToast()
     const router = useRouter()
 
@@ -32,6 +35,8 @@ export default function LoginForm() {
 
     // 2. Define a submit handler.
     async function onSubmit(values: LoginBodyType) {
+        if (loading) return
+        setLoading(true)
         try {
             const result = await authAPiRequest.login(values)
             toast({
@@ -41,22 +46,12 @@ export default function LoginForm() {
             router.push('/me')
         }
         catch (error: any) {
-            const errors = error.payload?.errors as { field: string, message: string }[]
-            const status = error.status as number
-            if (status === 422) {
-                errors.forEach((error) => {
-                    form.setError(error.field as ('email' | 'password'), {
-                        type: 'server',
-                        message: error?.message,
-                    })
-                })
-            } else {
-                toast({
-                    title: "Lỗi !!",
-                    description: error.payload?.message,
-                    variant: "destructive"
-                })
-            }
+            handleErrorApi({
+                error,
+                setError: form.setError,
+            });
+        } finally {
+            setLoading(false)
         }
     }
 

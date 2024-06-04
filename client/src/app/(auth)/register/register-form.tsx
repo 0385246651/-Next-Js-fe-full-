@@ -15,8 +15,11 @@ import { RegisterBody, RegisterBodyType } from '@/schemaValidations/auth.schema'
 import { toast } from "@/components/ui/use-toast"
 import authAPiRequest from "@/apiRequests/auth"
 import { useRouter } from "next/navigation"
+import { handleErrorApi } from "@/lib/utils"
+import { useState } from "react"
 
 export default function RegisterForm() {
+    const [loading, setLoading] = useState<boolean>(false)
     const router = useRouter()
 
     const form = useForm<RegisterBodyType>({
@@ -31,6 +34,8 @@ export default function RegisterForm() {
 
     // 2. Define a submit handler.
     async function onSubmit(values: RegisterBodyType) {
+        if (loading) return
+        setLoading(true)
         try {
             const result = await authAPiRequest.register(values)
             toast({
@@ -41,22 +46,12 @@ export default function RegisterForm() {
             router.push('/me')
         }
         catch (error: any) {
-            const errors = error.payload?.errors as { field: string, message: string }[]
-            const status = error.status as number
-            if (status === 422) {
-                errors.forEach((error) => {
-                    form.setError(error.field as ('email' | 'password'), {
-                        type: 'server',
-                        message: error?.message,
-                    })
-                })
-            } else {
-                toast({
-                    title: "Lỗi !!",
-                    description: error.payload?.message,
-                    variant: "destructive"
-                })
-            }
+            handleErrorApi({
+                error,
+                setError: form.setError
+            });
+        } finally {
+            setLoading(false);
         }
     }
 
