@@ -107,6 +107,7 @@ const request = async <Response>(
     payload,
   };
 
+  // inter /ceptor là nơi chúng ta xử lý request và response trc khi trả về cho phía Component
   if (!res.ok) {
     if (res.status === ENTITY_ERROR_STATUS) {
       throw new EntityError(
@@ -119,11 +120,15 @@ const request = async <Response>(
       throw new HttpError(data);
     }
   }
-  if (["/auth/login", "/auth/register"].includes(url)) {
-    clientSessionToken.value = (payload as LoginResType).data.token;
-  } else if (["/auth/logout"].includes(url)) {
-    clientSessionToken.value = "";
+  //đảm bảo logic chạy ở phí clients
+  if (typeof window !== "undefined") {
+    if (["/auth/login", "/auth/register"].includes(url)) {
+      clientSessionToken.value = (payload as LoginResType).data.token;
+    } else if (["/auth/logout"].includes(url)) {
+      clientSessionToken.value = "";
+    }
   }
+
   return data;
 };
 
